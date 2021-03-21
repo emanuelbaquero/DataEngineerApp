@@ -20,6 +20,8 @@ COPY app/rest.py /work
 COPY start.sh /work 
 COPY st_regiones.csv /work
 
+RUN ["bash", "bar.sh"]
+RUN ["python3","generar_archivo.py"]
 
 CMD ["bash", "start.sh"]
 
