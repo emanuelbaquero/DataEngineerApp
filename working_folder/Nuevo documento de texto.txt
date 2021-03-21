@@ -1,0 +1,86 @@
+docker run -it --name prueba_entorno -p 5000:5000 -v C:/Users/Ema/Desktop/Cursos/desafioDataEngineer/working_folder:/tf ubuntu
+
+--apt update
+--apt install python3-pip
+--pip3 install flask
+--pip3 install flask-restful
+--pip3 install pandas
+--pip3 install requests
+--pip3 install pymongo
+--pip3 install flask_restplus
+--pip3 install Werkzeug==0.16.1
+
+
+
+
+echo -ne '#                    (2%)\r'
+sleep 5
+echo -ne '##                   (5%)\r'
+sleep 5
+echo -ne '###                  (8%)\r'
+sleep 5
+echo -ne '#####                (10%)\r'
+sleep 5
+echo -ne '######               (14%)\r'
+sleep 5
+echo -ne '#######              (18%)\r'
+sleep 5
+echo -ne '########             (20%)\r'
+sleep 5
+echo -ne '#########            (22%)\r'
+sleep 5
+echo -ne '##########           (24%)\r'
+sleep 5
+echo -ne '###########          (28%)\r'
+sleep 5
+echo -ne '############         (30%)\r'
+sleep 5
+echo -ne '#############        (34%)\r'
+sleep 5
+echo -ne '##############       (39%)\r'
+sleep 5
+echo -ne '###############      (41%)\r'
+sleep 5
+echo -ne '################     (44%)\r'
+sleep 5
+echo -ne '##################   (48%)\r'
+sleep 5
+echo -ne '###################  (52%)\r'
+sleep 5
+echo -ne '####################  (56%)\r'
+sleep 5
+echo -ne '#####################  (59%)\r'
+sleep 5
+echo -ne '######################  (61%)\r'
+sleep 5
+echo -ne '#######################  (64%)\r'
+sleep 5
+echo -ne '########################  (69%)\r'
+sleep 5
+echo -ne '#########################  (75%)\r'
+sleep 5
+echo -ne '########################## (79%)\r'
+sleep 5
+echo -ne '########################### (84%)\r'
+sleep 5
+echo -ne '############################ (88%)\r'
+sleep 5
+echo -ne '############################# (91%)\r'
+sleep 5
+echo -ne '############################## (93%)\r'
+sleep 5
+echo -ne '############################### (95%)\r'
+sleep 5
+echo -ne '################################ (97%)\r'
+sleep 5
+echo -ne '################################# (98%)\r'
+sleep 5
+echo -ne '##################################  (99%)\r'
+sleep 5
+echo -ne '################################### (100%)\r'
+echo -ne '\n'
+
+
+
+
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 354580768300.dkr.ecr.us-east-1.amazonaws.com

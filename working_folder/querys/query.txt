@@ -1,0 +1,5 @@
+http://localhost:5000/What_Is_The_Warmest_City_Region
+
+http://localhost:5000/What_Are_The_Two_Drier_City_Region
+
+http://localhost:5000/What_Is_The_Hottes_Day_For_Each_Month_For_Each_City_Region
