@@ -14,6 +14,8 @@ from datetime import datetime
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 
+import pandasql as ps
+
 
 ##CONECTION
 #USERNAME_MONGO = 'mongo'
@@ -43,6 +45,10 @@ api = Api(app, version='1.0', title='API exercise-data-engineer',
 )
 
 
+
+
+
+
 def getDataFrame():
     list_serie=[]
     for i in data.find():
@@ -68,15 +74,6 @@ def getDataFrame():
     df_mongo = df_mongo.iloc[1:,:]
 
     return df_mongo
-
-
-
-
-
-
-
-
-
 
     
 
@@ -110,12 +107,20 @@ class What_Is_The_Warmest_City_Region(Resource):
         df = getDataFrame()
 
         df.the_temp = df.the_temp.astype(float)
-        region = df.groupby(['region']).mean()['the_temp'].reset_index().sort_values('the_temp').tail(1)['region'].values[0]
-        temperature = df.groupby(['region']).mean()['the_temp'].reset_index().sort_values('the_temp').tail(1)['the_temp'].values[0]           
 
-        print(region)
-        print(temperature)
+        query = """
 
+
+            SELECT region, avg(the_temp) AS the_temp_mean 
+              FROM df 
+          GROUP BY region  
+          ORDER BY  the_temp_mean DESC
+
+
+        """
+
+        region = ps.sqldf(query, locals()).head(1)['region'].values[0]
+        temperature = ps.sqldf(query, locals()).head(1)['the_temp_mean'].values[0]         
 
 
         time_end  = datetime.now()
@@ -134,10 +139,24 @@ class What_Are_The_Two_Drier_City_Region(Resource):
         df = getDataFrame()
 
         df.humidity = df.humidity.astype(float)
-        region_baja_humedad_1 = df.groupby(['region']).mean()['humidity'].reset_index().sort_values('humidity').head(2)['region'].values[0]
-        humedad_1 = df.groupby(['region']).mean()['humidity'].reset_index().sort_values('humidity').head(2)['humidity'].values[0]  
-        region_baja_humedad_2 = df.groupby(['region']).mean()['humidity'].reset_index().sort_values('humidity').head(2)['region'].values[1]
-        humedad_2 = df.groupby(['region']).mean()['humidity'].reset_index().sort_values('humidity').head(2)['humidity'].values[1]            
+
+        query = """
+
+
+            SELECT region, avg(humidity) AS humidity_mean 
+              FROM df 
+          GROUP BY region 
+          ORDER BY humidity_mean
+
+
+        """
+
+
+        region_baja_humedad_1 = ps.sqldf(query, locals()).head(2).head(1)['region'].values[0]
+        humedad_1 = ps.sqldf(query, locals()).head(2).head(1)['humidity_mean'].values[0]
+
+        region_baja_humedad_2 = ps.sqldf(query, locals()).head(2).tail(1)['region'].values[0]
+        humedad_2 = ps.sqldf(query, locals()).head(2).tail(1)['humidity_mean'].values[0]          
 
 
         time_end  = datetime.now()
@@ -153,6 +172,7 @@ class What_Is_The_Hottes_Day_For_Each_Month_For_Each_City_Region(Resource):
         time_start = datetime.now() 
 
         df = getDataFrame()
+
         df.the_temp = df.the_temp.astype(float)
         df['mes'] = df.created.str.split(pat='-').apply(lambda x:x[1]).astype(int)
         df['dia']  = df.created.str.split(pat='-').apply(lambda x:x[2]).apply(lambda x: x[0:2]).astype(int)
@@ -161,91 +181,124 @@ class What_Is_The_Hottes_Day_For_Each_Month_For_Each_City_Region(Resource):
         dia_region_1=[]
         dia_region_2=[]
         dia_region_3=[]
+
         for i in [1,2,3]:
-            dia_region_1.append(df[(df.mes==i)&(df.region=='Buenos Aires')].groupby(['dia']).mean().reset_index().sort_values('the_temp').tail(1))
-            dia_region_1[i-1]['region'] = 'Buenos Aires'
-            dia_region_2.append(df[(df.mes==i)&(df.region=='Santiago')].groupby(['dia']).mean().reset_index().sort_values('the_temp').tail(1))
-            dia_region_2[i-1]['region'] = 'Santiago'
-            dia_region_3.append(df[(df.mes==i)&(df.region=='Brasilia')].groupby(['dia']).mean().reset_index().sort_values('the_temp').tail(1))
-            dia_region_3[i-1]['region'] = 'Brasilia'          
+             
+            query_buenos_aires = """  SELECT DISTINCT d2.region, d2.mes, d1.dia, d2.max_the_temp as the_temp 
+                                        FROM df d1 
+                                        JOIN  (SELECT region, mes, max(the_temp) as max_the_temp 
+                                                 FROM df 
+                                                WHERE region = 'Buenos Aires' 
+                                             GROUP BY mes, region) d2 
+                                          ON d1.region = d2.region AND d1.mes=d2.mes AND d1.the_temp = d2.max_the_temp 
+                                       WHERE d2.mes="""+str(i)
+
+            
+
+            query_santiago = """      SELECT DISTINCT d2.region, d2.mes, d1.dia, d2.max_the_temp as the_temp 
+                                        FROM df d1 
+                                        JOIN  (SELECT region, mes, max(the_temp) as max_the_temp 
+                                                 FROM df 
+                                                WHERE region = 'Santiago' 
+                                             GROUP BY mes, region) d2 
+                                          ON d1.region = d2.region AND d1.mes=d2.mes AND d1.the_temp = d2.max_the_temp 
+                                       WHERE d2.mes="""+str(i)
+
+            
+
+            query_brasilia = """      SELECT DISTINCT d2.region, d2.mes, d1.dia, d2.max_the_temp as the_temp 
+                                        FROM df d1 
+                                        JOIN  (SELECT region, mes, max(the_temp) as max_the_temp 
+                                                 FROM df 
+                                                WHERE region = 'Brasilia' 
+                                             GROUP BY mes, region) d2 
+                                          ON d1.region = d2.region AND d1.mes=d2.mes AND d1.the_temp = d2.max_the_temp 
+                                       WHERE d2.mes="""+str(i)
+
+
+            dia_region_1.append(ps.sqldf(query_buenos_aires, locals()))
+            
+            dia_region_2.append(ps.sqldf(query_santiago, locals()))
+            
+            dia_region_3.append(ps.sqldf(query_brasilia, locals()))
 
 
         time_end  = datetime.now()
 
-        return {    'time': str(time_end-time_start),
+        print(dia_region_1[0]['region'].iloc[0])
+
+        return {   'time': str(time_end-time_start),
 
 
-                    'primera_region':
-                                        {
-                                            'mes_1':{
-                                                            'region':dia_region_1[0]['region'].iloc[0],
-                                                            'dia':str(dia_region_1[0]['dia'].iloc[0]),
-                                                            'temperature':str(dia_region_1[0]['the_temp'].iloc[0])
-                                                    },
-                                            'mes_2':{
-                                                    'region':dia_region_1[1]['region'].iloc[0],
-                                                    'dia':str(dia_region_1[1]['dia'].iloc[0]),
-                                                    'temperature':str(dia_region_1[1]['the_temp'].iloc[0])
-                                                    },
-                                            'mes_3':{
-                                                    'region':dia_region_1[2]['region'].iloc[0],
-                                                    'dia':str(dia_region_1[2]['dia'].iloc[0]),
-                                                    'temperature':str(dia_region_1[2]['the_temp'].iloc[0])
-                                                    }
+                        'primera_region':
+                                            {
+                                                'mes_1':{
+                                                                'region':dia_region_1[0]['region'].iloc[0],
+                                                                'dia':str(dia_region_1[0]['dia'].iloc[0]),
+                                                                'temperature':str(dia_region_1[0]['the_temp'].iloc[0])
+                                                        },
+                                                'mes_2':{
+                                                        'region':dia_region_1[1]['region'].iloc[0],
+                                                        'dia':str(dia_region_1[1]['dia'].iloc[0]),
+                                                        'temperature':str(dia_region_1[1]['the_temp'].iloc[0])
+                                                        },
+                                                'mes_3':{
+                                                        'region':dia_region_1[2]['region'].iloc[0],
+                                                        'dia':str(dia_region_1[2]['dia'].iloc[0]),
+                                                        'temperature':str(dia_region_1[2]['the_temp'].iloc[0])
+                                                        }
 
 
-                                        },
+                                            },
 
 
-                    'segunda_region':
-                                        {
-                                            'mes_1':{
-                                                            'region':dia_region_2[0]['region'].iloc[0],
-                                                            'dia':str(dia_region_2[0]['dia'].iloc[0]),
-                                                            'temperature':str(dia_region_2[0]['the_temp'].iloc[0])
-                                                    },
-                                            'mes_2':{
-                                                    'region':dia_region_2[1]['region'].iloc[0],
-                                                    'dia':str(dia_region_2[1]['dia'].iloc[0]),
-                                                    'temperature':str(dia_region_2[1]['the_temp'].iloc[0])
-                                                    },
-                                            'mes_3':{
-                                                    'region':dia_region_2[2]['region'].iloc[0],
-                                                    'dia':str(dia_region_2[2]['dia'].iloc[0]),
-                                                    'temperature':str(dia_region_2[2]['the_temp'].iloc[0])
-                                                    }
+                        'segunda_region':
+                                            {
+                                                'mes_1':{
+                                                                'region':dia_region_2[0]['region'].iloc[0],
+                                                                'dia':str(dia_region_2[0]['dia'].iloc[0]),
+                                                                'temperature':str(dia_region_2[0]['the_temp'].iloc[0])
+                                                        },
+                                                'mes_2':{
+                                                        'region':dia_region_2[1]['region'].iloc[0],
+                                                        'dia':str(dia_region_2[1]['dia'].iloc[0]),
+                                                        'temperature':str(dia_region_2[1]['the_temp'].iloc[0])
+                                                        },
+                                                'mes_3':{
+                                                        'region':dia_region_2[2]['region'].iloc[0],
+                                                        'dia':str(dia_region_2[2]['dia'].iloc[0]),
+                                                        'temperature':str(dia_region_2[2]['the_temp'].iloc[0])
+                                                        }
 
 
-                                        },
-
-
-
-                    'tercera_region':
-                                        {
-                                            'mes_1':{
-                                                            'region':dia_region_3[0]['region'].iloc[0],
-                                                            'dia':str(dia_region_3[0]['dia'].iloc[0]),
-                                                            'temperature':str(dia_region_3[0]['the_temp'].iloc[0])
-                                                    },
-                                            'mes_2':{
-                                                    'region':dia_region_3[1]['region'].iloc[0],
-                                                    'dia':str(dia_region_3[1]['dia'].iloc[0]),
-                                                    'temperature':str(dia_region_3[1]['the_temp'].iloc[0])
-                                                    },
-                                            'mes_3':{
-                                                    'region':dia_region_3[2]['region'].iloc[0],
-                                                    'dia':str(dia_region_3[2]['dia'].iloc[0]),
-                                                    'temperature':str(dia_region_3[2]['the_temp'].iloc[0])
-                                                    }
-
-
-                                        },
+                                            },
 
 
 
+                        'tercera_region':
+                                            {
+                                                'mes_1':{
+                                                                'region':dia_region_3[0]['region'].iloc[0],
+                                                                'dia':str(dia_region_3[0]['dia'].iloc[0]),
+                                                                'temperature':str(dia_region_3[0]['the_temp'].iloc[0])
+                                                        },
+                                                'mes_2':{
+                                                        'region':dia_region_3[1]['region'].iloc[0],
+                                                        'dia':str(dia_region_3[1]['dia'].iloc[0]),
+                                                        'temperature':str(dia_region_3[1]['the_temp'].iloc[0])
+                                                        },
+                                                'mes_3':{
+                                                        'region':dia_region_3[2]['region'].iloc[0],
+                                                        'dia':str(dia_region_3[2]['dia'].iloc[0]),
+                                                        'temperature':str(dia_region_3[2]['the_temp'].iloc[0])
+                                                        }
 
-                }
 
+                                            }
+
+
+
+                    }
 
 
   

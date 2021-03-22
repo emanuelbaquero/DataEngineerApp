@@ -1,9 +1,8 @@
-#!/bin/python3
-
 import requests
 import pandas as pd
 from pymongo import MongoClient
 import json
+from time import sleep
 
 
 def get_dataframe_api(mes, dias):
@@ -15,6 +14,7 @@ def get_dataframe_api(mes, dias):
     id_Brasilia = int(pd.DataFrame(response_brasilia.json()).woeid)
     id_Santiago = int(pd.DataFrame(response_santiago.json()).woeid)
     
+ 
     for i in range(1,dias):
         STR_GET = "https://www.metaweather.com/api/location/{}/2021/{}/{}/".format(id_BuenosAires,mes,i)
         response = requests.get(STR_GET)
@@ -24,7 +24,7 @@ def get_dataframe_api(mes, dias):
             df_bsas_aux = pd.DataFrame(response.json())
             df_bsas = pd.concat([df_bsas,df_bsas_aux])
     df_bsas['region'] = 'Buenos Aires'
-            
+   
     for i in range(1,dias):
         STR_GET = "https://www.metaweather.com/api/location/{}/2021/{}/{}/".format(id_Brasilia,mes,i)
         response = requests.get(STR_GET)
@@ -47,7 +47,7 @@ def get_dataframe_api(mes, dias):
     df_santiago['region'] = 'Santiago'
         
     df = pd.concat([df_bsas,df_brasilia,df_santiago])
-            
+
     return df
 
 
