@@ -11,18 +11,19 @@ RUN pip3 install pymongo
 RUN pip3 install flask_restplus 
 RUN pip3 install Werkzeug==0.16.1 
 RUN pip3 install pandasql
+RUN pip3 install boto3
 
 WORKDIR /work
 
 COPY bar.sh /work
-COPY generar_archivo.py /work
-COPY guardar_datos_mongo.py /work
+#COPY generar_archivo.py /work
+#COPY guardar_datos_mongo.py /work
 COPY app/rest.py /work 
 COPY start.sh /work 
-COPY st_regiones.csv /work
+#COPY st_regiones.csv /work
 
 #RUN ["bash", "bar.sh"]
-RUN ["python3","generar_archivo.py"]
+#RUN ["python3","generar_archivo.py"]
 
 CMD ["bash", "start.sh"]
 
