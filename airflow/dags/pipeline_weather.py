@@ -3,7 +3,7 @@ from airflow.utils import dates
 from airflow.operators.dummy_operator import DummyOperator
 from airflow.operators.python_operator import PythonOperator 
 from airflow.operators.bash_operator  import BashOperator
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 import pandas as pd
 from pymongo import MongoClient
@@ -25,11 +25,12 @@ CHILD_DAG_NAME_COMPLETO = PARENT_DAG_NAME+'.'+TASK_ID_SUBDAG_COMPLETO
 CHILD_DAG_NAME_TEST_SIN_PROCESAR = PARENT_DAG_NAME+'.'+TASK_ID_SUBDAG_TEST_SIN_PROCESAR
 
 
-
-
 default_args = {
 	'owner':'airfow',
-	'start_date':dates.days_ago(1)
+	'start_date':dates.days_ago(1),
+	'retries': 5,
+	'retry_delay': timedelta(seconds=5),
+	'schedule_interval':'@daily'
 }
 
 def get_dataframe_api(año, mes, dias):
@@ -288,23 +289,13 @@ def load_subdag_process_complete(param_PARENT_DAG_NAME, param_CHILD_DAG_NAME_COM
 
 	with DAG( param_CHILD_DAG_NAME_COMPLETO,
 				default_args=param_default_args,
-				schedule_interval='@daily') as subdag:
+			  	catchup=True) as subdag:
 
 		# TASK 1
 		start = BashOperator(task_id='start', bash_command='echo start')
 
-		procesar_2010 = DummyOperator(task_id='procesar_2010', trigger_rule='all_done')
-		procesar_2011 = DummyOperator(task_id='procesar_2011', trigger_rule='all_done')
-		procesar_2012 = DummyOperator(task_id='procesar_2012', trigger_rule='all_done')
-		procesar_2013 = DummyOperator(task_id='procesar_2013', trigger_rule='all_done')
-		procesar_2014 = DummyOperator(task_id='procesar_2014', trigger_rule='all_done')
-		procesar_2015 = DummyOperator(task_id='procesar_2015', trigger_rule='all_done')
-		procesar_2016 = DummyOperator(task_id='procesar_2016', trigger_rule='all_done')
-		procesar_2017 = DummyOperator(task_id='procesar_2017', trigger_rule='all_done')
-		procesar_2018 = DummyOperator(task_id='procesar_2018', trigger_rule='all_done')
-		procesar_2019 = DummyOperator(task_id='procesar_2019', trigger_rule='all_done')
-		procesar_2020 = DummyOperator(task_id='procesar_2020', trigger_rule='all_done')
-		procesar_2021 = DummyOperator(task_id='procesar_2021', trigger_rule='all_done')
+		proceso_ingesta = DummyOperator(task_id='proceso_ingesta', trigger_rule='all_done')
+		proceso_ingesta_completado = DummyOperator(task_id='proceso_ingesta_completado', trigger_rule='all_done')
 
 		crear_carpeta_temporal = BashOperator(task_id='crear_carpeta_temporal',
 											  bash_command='mkdir /opt/airflow/logs/data_weather/')
@@ -447,44 +438,14 @@ def load_subdag_process_complete(param_PARENT_DAG_NAME, param_CHILD_DAG_NAME_COM
 		end = DummyOperator(task_id = 'end')
 
 
+
+	l_datos = list(set().union(l_datos_2010, l_datos_2011, l_datos_2012,l_datos_2013,l_datos_2014,l_datos_2015,l_datos_2016,l_datos_2017,l_datos_2018,l_datos_2019,l_datos_2020,l_datos_2021))
+
+
 	## SCHEDULER
 
-	for i in range(len(l_datos_2010 ) -1):
-		start >> crear_carpeta_temporal >> procesar_2010 >> [l_datos_2010[i], l_datos_2010[ i +1]] >> procesar_2011
-
-	for i in range(len(l_datos_2011 ) -1):
-		procesar_2011 >> [l_datos_2011[i], l_datos_2011[ i +1]] >> procesar_2012
-
-	for i in range(len(l_datos_2012 ) -1):
-		procesar_2012 >> [l_datos_2012[i], l_datos_2012[ i +1]] >> procesar_2013
-
-	for i in range(len(l_datos_2013 ) -1):
-		procesar_2013 >> [l_datos_2013[i], l_datos_2013[ i +1]] >> procesar_2014
-
-	for i in range(len(l_datos_2014 ) -1):
-		procesar_2014 >> [l_datos_2014[i], l_datos_2014[ i +1]] >> procesar_2015
-
-	for i in range(len(l_datos_2015 ) -1):
-		procesar_2015 >> [l_datos_2015[i], l_datos_2015[ i +1]] >> procesar_2016
-
-	for i in range(len(l_datos_2016 ) -1):
-		procesar_2016 >> [l_datos_2016[i], l_datos_2016[ i +1]] >> procesar_2017
-
-	for i in range(len(l_datos_2017 ) -1):
-		procesar_2017 >> [l_datos_2017[i], l_datos_2017[ i +1]] >> procesar_2018
-
-	for i in range(len(l_datos_2018 ) -1):
-		procesar_2018 >> [l_datos_2018[i], l_datos_2018[ i +1]] >> procesar_2019
-
-	for i in range(len(l_datos_2019 ) -1):
-		procesar_2019 >> [l_datos_2019[i], l_datos_2019[ i +1]] >> procesar_2020
-
-	for i in range(len(l_datos_2020 ) -1):
-		procesar_2020 >> [l_datos_2020[i], l_datos_2020[ i +1]] >> procesar_2021
-
-	for i in range(len(l_datos_2021 ) -1):
-		procesar_2021 >> [l_datos_2021[i], l_datos_2021
-			[ i +1]] >> into_DataLake_s3 >> eliminar_carpeta_temporal >> into_metrics_on_mongo >> end
+	for i in range(len(l_datos ) -1):
+		start >> crear_carpeta_temporal >> proceso_ingesta >> [l_datos[i], l_datos[ i +1]] >> proceso_ingesta_completado >> into_DataLake_s3 >> eliminar_carpeta_temporal >> into_metrics_on_mongo >> end
 
 
 	return subdag
@@ -494,9 +455,7 @@ def load_subdag_process_complete(param_PARENT_DAG_NAME, param_CHILD_DAG_NAME_COM
 
 def load_subdag_process_test_sin_cargar_archivos(param_PARENT_DAG_NAME, CHILD_DAG_NAME_TEST_SIN_PROCESAR, param_default_args):
 
-	with DAG( CHILD_DAG_NAME_TEST_SIN_PROCESAR,
-			  	default_args=param_default_args,
-				schedule_interval='@daily') as subdag:
+	with DAG( CHILD_DAG_NAME_TEST_SIN_PROCESAR, default_args=param_default_args) as subdag:
 
 		start = DummyOperator(task_id='start')
 
@@ -526,7 +485,9 @@ def load_subdag_process_test_sin_cargar_archivos(param_PARENT_DAG_NAME, CHILD_DA
 # DAG
 with DAG(dag_id=PARENT_DAG_NAME,
 		 default_args=default_args,
-		 schedule_interval = '@daily') as dag:
+		 start_date=dates.days_ago(1),
+		 schedule_interval=timedelta(hours=3),
+		 catchup=False) as dag:
 
 
 	start = BashOperator(task_id='super_start', bash_command='echo super_start')

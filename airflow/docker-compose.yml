@@ -35,7 +35,13 @@
 #                              Default: airflow
 #
 # Feel free to modify this file to suit your needs.
-version: '3'
+
+#sudo apt-get remove docker-compose
+#sudo curl -L "https://github.com/docker/compose/releases/download/1.29.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+#sudo chmod +x /usr/local/bin/docker-compose
+#docker-compose --version
+
+version: '3.7'
 x-airflow-common:
   &airflow-common
   #image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.0.1}
@@ -48,7 +54,11 @@ x-airflow-common:
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
     AIRFLOW__CORE__FERNET_KEY: ''
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
-    AIRFLOW__CORE__LOAD_EXAMPLES: 'True'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'False'
+    AIRFLOW__CORE__PARALLELISM: 48
+    AIRFLOW__CORE__DAG_CONCURRENCY: 48
+    AIRFLOW__CELERY__WORKER_CONCURRENCY: 12
+    AIRFLOW__SCHEDULER__PARSING_PROCESSES: 2
 
   volumes:
     - ./dags:/opt/airflow/dags
@@ -112,7 +122,34 @@ services:
       - ./logs:/opt/airflow/logs
     restart: always
 
-  airflow-worker:
+  airflow-worker-1:
+    <<: *airflow-common
+    command: celery worker
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+      - ./logs:/opt/airflow/logs
+    restart: always
+
+  airflow-worker-2:
+    <<: *airflow-common
+    command: celery worker
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+      - ./logs:/opt/airflow/logs
+    restart: always
+
+  airflow-worker-3:
+    <<: *airflow-common
+    command: celery worker
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./plugins:/opt/airflow/plugins
+      - ./logs:/opt/airflow/logs
+    restart: always
+
+  airflow-worker-4:
     <<: *airflow-common
     command: celery worker
     volumes:
