@@ -1,0 +1,9 @@
+pandas
+pymongo
+boto3
+pandasql
+
+
+aws ec2 create-subnet --vpc-id vpc-0f57f1832c0b66c5e --cidr-block 10.0.1.0/24 
+aws ec2 create-subnet --vpc-id vpc-0f57f1832c0b66c5e --cidr-block 10.0.0.0/24 
+aws ec2 create-subnet --availability-zone us-east-2a --vpc-id vpc-0f57f1832c0b66c5e --cidr-block 10.0.0.0/24 

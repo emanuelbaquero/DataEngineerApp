@@ -159,7 +159,7 @@ def getDataFrame():
 def metrics_into_mongo():
 
 #What_Is_The_Warmest_City_Region
-	client = MongoClient(Variable.get('mongo_db_secret_access_key'))
+	client = MongoClient("mongodb+srv://mongo:mongo@cluster0.yjbeg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 	db = client.get_database('test')
 	data = db.What_Is_The_Warmest_City_Region
 	data.drop()
@@ -187,7 +187,7 @@ def metrics_into_mongo():
 
 #What_Are_The_Two_Drier_City_Region
 
-	client = MongoClient(Variable.get('mongo_db_secret_access_key'))
+	client = MongoClient("mongodb+srv://mongo:mongo@cluster0.yjbeg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 	db = client.get_database('test')
 	data = db.What_Are_The_Two_Drier_City_Region
 	data.drop()
@@ -211,7 +211,7 @@ def metrics_into_mongo():
 
 
 #What_Is_The_Hottes_Day_For_Each_Month
-	client = MongoClient(Variable.get('mongo_db_secret_access_key'))
+	client = MongoClient("mongodb+srv://mongo:mongo@cluster0.yjbeg.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 	db = client.get_database('test')
 	data = db.What_Is_The_Hottes_Day_For_Each_Month
 	data.drop()
@@ -486,7 +486,7 @@ def load_subdag_process_test_sin_cargar_archivos(param_PARENT_DAG_NAME, CHILD_DA
 with DAG(dag_id=PARENT_DAG_NAME,
 		 default_args=default_args,
 		 start_date=dates.days_ago(1),
-		 schedule_interval=timedelta(hours=6),
+		 schedule_interval=timedelta(hours=3),
 		 catchup=False) as dag:
 
 
